@@ -1,0 +1,193 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="text-center">
+    <h2 class="mb-3">Ticket API CRUD - Consumo por API REST - AJAX</h2>
+    <div class="w-100 d-flex justify-content-center mb-3">
+        <div class="card" style="width: 25rem;">
+            <h5 class="card-header" id="tituloTicket">Agregar Ticket</h5>
+            <div class="card-body">
+                <div class="form-group">
+                    <label>Usuario</label>
+                    <input type="text" class="form-control" id="username" maxlength="50"/>
+                </div>
+                <div class="form-group">
+                    <select id="status" class="form-control">
+                        <option disabled selected value="">Seleccione una opción</option>
+                        <option>Abierto</option>
+                        <option>Cerrado</option>
+                    </select>
+                </div>
+                <button class="btn btn-primary w-100" onclick="add()" id="btnAgregar">Agregar Ticket</button>
+                <button class="btn btn-success w-100" style="display:none" onclick="update()" id="btnActualizar">Actualizar Ticket</button>
+            </div>
+        </div>
+    </div>
+    <hr />
+    <input type="hidden" id="idTicket" />
+    <div class="row" id="tickets">
+
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"
+            integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
+            crossorigin="anonymous">
+    </script>
+
+    <script>
+
+
+        function listTicket() {
+            $.ajax({
+                type: "GET",
+                url: "/api/Tickets",
+                success: function (data) {
+                    var html = "";
+
+                    data.forEach(item => {
+                        html += `
+                                <div class='col-md-4 col-sm-12 mb-4'>
+                                    <div class='card' style='width: 20rem;'>
+                                        <h5 class='card-header bg-dark text-white'>Ticket #`+ item.idTicket +`</h5>
+                                        <div class='card-body'>
+                                            <div class='form-group'>
+                                                <h5>` + item.username + `</h5>`
+                        if (item.status == "Abierto") {
+                            html += `<div class='badge badge-success'>` + item.status + `</div>`
+                        } else {
+                            html += `<div class='badge badge-danger'>` + item.status + `</div>`
+                        }
+                        html +=`                    
+                                                <p><b>Fecha de creacion: </b>` + item.creationDate + `</p>
+                                                <p><b>Fecha de actualización: </b>` + (item.updateDate == null ? "" : item.updateDate )+ `</p>
+                                            </div>
+                                            <button class='btn btn-secondary mb-2 w-100' onclick='edit(` + item.idTicket + `)'>Editar</button>
+                                            <button class='btn btn-danger w-100' onclick='remove(` + item.idTicket + `)'>Eliminar</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                `;
+                    })
+                    $("#tickets").html(html)
+                    console.log(data);
+                },
+                failure: function (data) {
+                    alert(data.responseText);
+                },
+                error: function (data) {
+                    alert(data.responseText);
+                }
+            });
+        }
+
+        function add() {
+            $.ajax({
+                type: "POST",
+                contentType: "application/json; charset=utf-8",
+                url: "/api/Tickets",
+                data: JSON.stringify({
+                    "username": $("#username").val(),
+                    "status": $("#status").val()
+                }),
+                dataType: "json",
+                success: function (data) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Se guardo correctamente el ticket',
+                        showConfirmButton: false,
+                        timer: 1500
+                    })
+                    listTicket()
+                    $("#username").val("")
+                    $("#status").val("")
+                },
+                failure: function (data) {
+                    alert(data.responseText);
+                },
+                error: function (data) {
+                    alert(data.responseText);
+                }
+            });
+        }
+
+        function edit(id) {
+            $("#idTicket").val(id)
+            $("#btnActualizar").css("display", "block")
+            $("#btnAgregar").css("display", "none")
+            $.ajax({
+                type: "GET",
+                url: "/api/Tickets/" + id,
+                success: function (data) {
+                    $("#username").val(data.username)
+                    $("#status").val(data.status)
+
+                    console.log(data)
+                },
+                failure: function (data) {
+                    alert(data.responseText);
+                },
+                error: function (data) {
+                    alert(data.responseText);
+                }
+            });
+        }
+
+        function update() {
+            $.ajax({
+                type: "PUT",
+                contentType: "application/json; charset=utf-8",
+                url: "/api/Tickets/" + $("#idTicket").val(),
+                data: JSON.stringify({
+                    "username": $("#username").val(),
+                    "status": $("#status").val()
+                }),
+                dataType: "json",
+                success: function (data) {
+                    listTicket()
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Se actualizo correctamente el ticket',
+                        showConfirmButton: false,
+                        timer: 1500
+                    })
+                    $("#username").val("")
+                    $("#status").val("")
+                    $("#btnActualizar").css("display", "none")
+                    $("#btnAgregar").css("display", "block")
+                },
+                failure: function (data) {
+                    alert(data.responseText);
+                },
+                error: function (data) {
+                    alert(data.responseText);
+                }
+            });
+        }
+
+        function remove(id) {
+            $.ajax({
+                type: "DELETE",
+                url: "/api/Tickets/" + id,
+                success: function (data) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Se elimino correctamente el ticket',
+                        showConfirmButton: false,
+                        timer: 1500
+                    })
+                    listTicket()
+                },
+                failure: function (data) {
+                    alert(data.responseText);
+                },
+                error: function (data) {
+                    alert(data.responseText);
+                }
+            });
+        }
+
+        listTicket()
+
+    </script>
+    <script src="//cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</div>
